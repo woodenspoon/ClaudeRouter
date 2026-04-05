@@ -1,0 +1,31 @@
+{
+  "name": "claude-router",
+  "version": "1.0.0",
+  "description": "Intelligent model routing for Claude Code",
+  "main": "./dist/sdk/index.js",
+  "types": "./dist/sdk/index.d.ts",
+  "bin": {
+    "claude-router": "./dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0",
+    "@types/node": "^20.0.0"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "model-routing",
+    "ai",
+    "anthropic"
+  ],
+  "license": "MIT"
+}

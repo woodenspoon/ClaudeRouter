@@ -1,0 +1,14 @@
+{
+  "name": "claude-router-marketplace",
+  "owner": {
+    "name": "0dust"
+  },
+  "plugins": [
+    {
+      "name": "claude-router",
+      "description": "Routes prompts to Haiku, Sonnet, or Opus based on complexity.",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "name": "claude-router",
+  "description": "Intelligent model routing for Claude Code. Routes prompts to Haiku, Sonnet, or Opus based on complexity.",
+  "version": "1.0.0",
+  "author": {
+    "name": "0dust"
+  }
+}
