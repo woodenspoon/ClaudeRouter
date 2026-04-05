@@ -6,9 +6,19 @@ import { logDecision, getSessionId, hashPrompt } from '../telemetry/logger';
 import { recordRoutingEvent } from '../telemetry/feedback';
 import { printStats } from './stats';
 import { handleInit, handleRemove } from './init';
+import { handleDoctor } from './doctor';
 
 async function handleRoute(args: string[]): Promise<void> {
-  const prompt = args[0];
+  let prompt: string;
+  if (args.includes('--stdin')) {
+    const chunks: Buffer[] = [];
+    for await (const chunk of process.stdin) {
+      chunks.push(chunk);
+    }
+    prompt = Buffer.concat(chunks).toString('utf-8').trim();
+  } else {
+    prompt = args[0];
+  }
   if (!prompt) {
     process.stderr.write('Usage: claude-router route <prompt> [--format model]\n');
     process.exit(1);
@@ -67,22 +77,33 @@ async function main(): Promise<void> {
     case 'remove':
       handleRemove(args.slice(1));
       break;
+    case 'doctor':
+      handleDoctor();
+      break;
+    case '--version':
+    case '-v': {
+      const pkg = require('../../package.json');
+      console.log(pkg.version);
+      break;
+    }
     case '--help':
     case '-h':
     case undefined:
       console.log(`claude-router — Intelligent model routing for Claude Code
 
 Usage:
-  claude-router route <prompt> [--format model|directive|full]
+  claude-router route <prompt> [--stdin] [--format model|directive|full]
   claude-router stats [--days N]
   claude-router init [project-dir]    Set up hook and CLAUDE.md for a project
   claude-router remove [project-dir]  Remove hook and CLAUDE.md directives
+  claude-router doctor                Verify installation health
 
 Commands:
   route    Classify a prompt and return the routing decision
   stats    Show routing statistics for the last N days (default: 7)
   init     Register the UserPromptSubmit hook and inject CLAUDE.md directives
-  remove   Remove the hook and CLAUDE.md directives`);
+  remove   Remove the hook and CLAUDE.md directives
+  doctor   Check Node version, jq, hook registration, and file accessibility`);
       break;
     default:
       process.stderr.write(`Unknown command: ${command}\n`);

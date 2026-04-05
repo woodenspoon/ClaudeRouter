@@ -14,8 +14,7 @@ build/
 .env.*.local
 *.env
 
-# Claude Router runtime data
-~/.claude-router/
+# Claude Router runtime data (stored in ~/.claude-router/, not in the repo)
 events.jsonl
 
 # Logs

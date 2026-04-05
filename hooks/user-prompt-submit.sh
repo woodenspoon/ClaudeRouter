@@ -43,7 +43,7 @@ PROMPT_LEN=${#PROMPT}
 if [ "$PROMPT_LEN" -gt 100000 ] 2>/dev/null; then exit 0; fi
 
 # --- Get the routing directive from the classifier ---
-DIRECTIVE=$(claude-router route "$PROMPT" --format directive 2>/dev/null || echo "")
+DIRECTIVE=$(printf '%s' "$PROMPT" | claude-router route --stdin --format directive 2>/dev/null || echo "")
 
 if [ -z "$DIRECTIVE" ]; then
   # No directive — let Claude handle normally
@@ -52,7 +52,7 @@ fi
 
 # --- Suppress HIGH tier (Claude handles these directly by default) ---
 case "$DIRECTIVE" in
-  *"Complexity: HIGH"*) exit 0 ;;
+  *"Complexity: HIGH"*|*"Handle this task directly"*) exit 0 ;;
 esac
 
 # Output the directive as plain text stdout

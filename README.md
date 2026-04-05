@@ -1,12 +1,29 @@
 # ClaudeRouter
 
+[![npm version](https://img.shields.io/npm/v/@0dust/claude-router.svg)](https://www.npmjs.com/package/@0dust/claude-router)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 **Stop burning Opus tokens on grep.** ClaudeRouter classifies every prompt before it hits the model — routing simple tasks to Haiku, feature work to Sonnet, and architecture to Opus. Ships as a Claude Code plugin. Zero config.
 
 ## Motivation
 
 93.8% of all tokens in a typical Claude Code Max session flow to Opus — even for trivial tasks like "yes, do it" or "what does this function do?" ([#27665](https://github.com/anthropics/claude-code/issues/27665), [#43326](https://github.com/anthropics/claude-code/issues/43326)). ClaudeRouter fixes this by classifying prompt complexity and delegating to the right model automatically.
 
+## Prerequisites
+
+- **Node.js 18+**
+- **Claude Code** installed ([install guide](https://docs.anthropic.com/en/docs/claude-code))
+- **Claude Pro or Max subscription** (required for subagent delegation)
+- **jq** — the hook script depends on it (`brew install jq` / `apt install jq`)
+
 ## Installation
+
+```bash
+npm install -g @0dust/claude-router
+claude-router init
+```
+
+### From source
 
 ```bash
 git clone https://github.com/0dust/ClaudeRouter.git
@@ -18,7 +35,7 @@ claude-router init
 ```
 
 This will:
-- Verify dependencies (`jq`, `ANTHROPIC_API_KEY`)
+- Verify dependencies (`jq`)
 - Register the `UserPromptSubmit` hook in `~/.claude/settings.json`
 - Append the routing directive to your project's `CLAUDE.md` (with markers for clean removal)
 
@@ -126,6 +143,35 @@ ClaudeRouter works with zero configuration. To customize, create `.claude-router
 
 Config is merged in order: hardcoded defaults → `~/.claude-router.json` → CWD `.claude-router.json`. Later values override earlier ones.
 
+## Troubleshooting
+
+**Stats show zero events after using Claude Code**
+The hook may not be registered. Check:
+```bash
+cat ~/.claude/settings.json | jq '.hooks.UserPromptSubmit'
+```
+If empty, re-run `claude-router init`.
+
+**Hook not firing**
+1. Verify `jq` is installed: `command -v jq`
+2. Verify the hook script exists at the path shown in settings.json
+3. Verify the hook is executable: `ls -la $(which claude-router)`
+
+**jq not installed**
+The hook exits silently without jq. Install it:
+- macOS: `brew install jq`
+- Ubuntu/Debian: `sudo apt install jq`
+- Arch: `sudo pacman -S jq`
+
+**claude-router command not found after install**
+If installed via `npm install -g .`, ensure your npm global bin directory
+is in your PATH: `npm bin -g`
+
+**All prompts routing to Sonnet (MEDIUM)**
+This is the fallback behavior when Haiku classification fails. Verify that
+Claude Code can reach the Anthropic API (this requires an active Claude
+Pro or Max subscription).
+
 ## Override Keyword
 
 Prefix any prompt with `//opus` to bypass classification and force Opus:
@@ -188,6 +234,10 @@ This removes:
 - The `<!-- claude-router:start -->` ... `<!-- claude-router:end -->` block from your project's `CLAUDE.md`
 
 Telemetry data in `~/.claude-router/` is preserved. Delete it manually if desired.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

@@ -4,7 +4,7 @@
 
 ```bash
 git clone https://github.com/0dust/ClaudeRouter.git
-cd ClaudeRouter/claude-router
+cd ClaudeRouter
 npm install
 npm run build
 ```
@@ -15,7 +15,7 @@ To iterate without reinstalling globally, run the CLI directly from the build ou
 node dist/cli/index.js route "your prompt here" --format full
 ```
 
-To install globally from source (note: `npm install -g claude-router` won't work — that name is taken on the registry by an unrelated package):
+To install globally from source (the published package is scoped as `@0dust/claude-router` on npm):
 
 ```bash
 npm install -g .
@@ -37,7 +37,7 @@ The hook script reads JSON from stdin and writes a directive to stdout:
 
 ```bash
 echo '{"prompt": "add a login endpoint", "is_subagent": false}' \
-  | ANTHROPIC_API_KEY=sk-... bash hooks/user-prompt-submit.sh
+  | bash hooks/user-prompt-submit.sh
 ```
 
 To load the plugin into a live Claude Code session without reinstalling globally, use the `--plugin-dir` flag:

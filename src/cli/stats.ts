@@ -88,7 +88,8 @@ function pad(str: string, width: number): string {
 
 export function printStats(days: number = 7): void {
   const stats = computeStats(days);
-  const divider = '─'.repeat(41);
+  const plain = !!process.env.NO_COLOR || !process.stdout.isTTY;
+  const divider = plain ? '-'.repeat(41) : '─'.repeat(41);
 
   const lines = [
     `ClaudeRouter — last ${stats.days} days`,

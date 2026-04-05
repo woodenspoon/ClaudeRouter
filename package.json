@@ -1,5 +1,5 @@
 {
-  "name": "claude-router",
+  "name": "@0dust/claude-router",
   "version": "1.0.0",
   "description": "Intelligent model routing for Claude Code",
   "main": "./dist/sdk/index.js",
@@ -8,10 +8,19 @@
     "claude-router": "./dist/cli/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp src/classifier/prompt.md dist/classifier/",
     "test": "vitest run",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build && npm test"
   },
+  "files": [
+    "dist/",
+    "hooks/",
+    ".claude-plugin/",
+    "runtime-claude.md",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0"
   },
@@ -25,7 +34,16 @@
     "claude-code",
     "model-routing",
     "ai",
-    "anthropic"
+    "anthropic",
+    "llm"
   ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/0dust/ClaudeRouter.git"
+  },
+  "homepage": "https://github.com/0dust/ClaudeRouter#readme",
   "license": "MIT"
 }
