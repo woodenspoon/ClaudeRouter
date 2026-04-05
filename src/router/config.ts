@@ -71,6 +71,13 @@ export function loadConfig(cwd?: string): RouterConfig {
 
   warnInvalidModels(config);
 
+  if (config.override_keyword.trim() === '') {
+    process.stderr.write(
+      `[claude-router] Warning: override_keyword is empty, resetting to default "${DEFAULTS.override_keyword}"\n`
+    );
+    config.override_keyword = DEFAULTS.override_keyword;
+  }
+
   return config;
 }
 

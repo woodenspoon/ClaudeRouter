@@ -27,9 +27,9 @@ const HIGH_KEYWORD_PATTERNS = [
 ];
 
 const CONTEXT_REF =
-  /\b(it|this|that|them|they|the error|the bug|the issue|the file|the function|the test|we|our|my|above|below|previous|earlier|last)\b/i;
+  /\b(it|this|that|them|they|these|those|the \w+|we|our|my|your|above|below|previous|earlier|last|here)\b/i;
 
-const LOW_TOKEN_THRESHOLD = 8;
+const LOW_TOKEN_THRESHOLD = 4;
 const HIGH_TOKEN_THRESHOLD = 400;
 
 const MEDIUM_PREFIX_PATTERNS = [
@@ -59,9 +59,10 @@ export function quickClassify(prompt: string): Tier | null {
 
   const tokens = tokenCount(trimmed);
 
-  // LOW: confirmation pattern (always short, unambiguous)
+  // Confirmations are context-dependent — they respond to something
+  // Claude said. Must be handled directly with full conversation context.
   if (CONFIRMATION_PATTERN.test(trimmed)) {
-    return 'LOW';
+    return 'HIGH';
   }
 
   // HIGH: contains high-complexity keywords (check before token count)
@@ -83,7 +84,13 @@ export function quickClassify(prompt: string): Tier | null {
     }
   }
 
-  // LOW: fewer than 8 tokens (after HIGH keyword and MEDIUM prefix checks)
+  // Guard against non-whitespace-separated languages (CJK, Thai, etc.)
+  // where tokenCount returns 1 for substantive prompts
+  if (tokens <= 1 && trimmed.length > 10) {
+    return null;
+  }
+
+  // LOW: fewer than 4 tokens (after HIGH keyword and MEDIUM prefix checks)
   if (tokens < LOW_TOKEN_THRESHOLD && !CONTEXT_REF.test(trimmed)) {
     return 'LOW';
   }

@@ -46,8 +46,8 @@ describe('route', () => {
       ...defaultConfig,
       conservative: true,
     };
-    // "yes" is classified as LOW by signals
-    const decision = await route('yes', conservativeConfig);
+    // "hello" is classified as LOW by signals (1 token, no context ref)
+    const decision = await route('hello', conservativeConfig);
     expect(decision.tier).toBe('LOW');
     // But the model should be MEDIUM (Sonnet) due to conservative shift
     expect(decision.model).toBe('claude-sonnet-4-6');
@@ -75,12 +75,14 @@ describe('route', () => {
         LOW: 'custom-haiku-model',
       },
     };
-    const decision = await route('yes', customConfig);
+    // "hello" is classified as LOW by signals (1 token, no context ref)
+    const decision = await route('hello', customConfig);
     expect(decision.model).toBe('custom-haiku-model');
   });
 
   it('LOW prompt gets correct directive', async () => {
-    const decision = await route('yes', defaultConfig);
+    // "hello" is classified as LOW by signals (1 token, no context ref)
+    const decision = await route('hello', defaultConfig);
     expect(decision.directive).toContain('[ROUTER]');
     expect(decision.directive).toContain('LOW');
     expect(decision.directive).toContain('Haiku subagent');

@@ -1,15 +1,13 @@
 import { readEvents, type RoutingEvent } from '../telemetry/logger';
 import { computeFollowupStats } from '../telemetry/feedback';
 
-const AVG_PROMPT_TOKENS = 200;
-
 interface StatsResult {
   days: number;
   total: number;
   low: number;
   medium: number;
   high: number;
-  estimatedOpusSaved: number;
+  savedTokens: number;
   followupRate: number;
   manualOverrides: number;
 }
@@ -26,14 +24,17 @@ function computeStats(days: number): StatsResult {
   let medium = 0;
   let high = 0;
   let overrides = 0;
+  let savedTokens = 0;
 
   for (const event of filtered) {
     switch (event.tier) {
       case 'LOW':
         low++;
+        savedTokens += event.prompt_tokens || 0;
         break;
       case 'MEDIUM':
         medium++;
+        savedTokens += event.prompt_tokens || 0;
         break;
       case 'HIGH':
         high++;
@@ -45,10 +46,6 @@ function computeStats(days: number): StatsResult {
   }
 
   const total = filtered.length;
-  // Estimated Opus saved = tokens that would have gone to Opus minus tokens actually sent
-  // All prompts would have gone to Opus by default; LOW and MEDIUM were diverted
-  const savedPrompts = low + medium;
-  const estimatedOpusSaved = savedPrompts * AVG_PROMPT_TOKENS;
 
   const feedbackStats = computeFollowupStats(days);
 
@@ -58,7 +55,7 @@ function computeStats(days: number): StatsResult {
     low,
     medium,
     high,
-    estimatedOpusSaved,
+    savedTokens,
     followupRate: feedbackStats.followup_rate,
     manualOverrides: overrides,
   };
@@ -98,8 +95,8 @@ export function printStats(days: number = 7): void {
     `LOW  → Haiku:        ${pad(stats.low.toString(), 5)}   (${pct(stats.low, stats.total)})`,
     `MED  → Sonnet:       ${pad(stats.medium.toString(), 5)}   (${pct(stats.medium, stats.total)})`,
     `HIGH → Opus:         ${pad(stats.high.toString(), 5)}   (${pct(stats.high, stats.total)})`,
-    `Estimated Opus saved:   ${formatNumber(stats.estimatedOpusSaved)} tokens`,
-    `Follow-up rate (LOW):   ${(stats.followupRate * 100).toFixed(1)}%    ← routing accuracy`,
+    `Estimated Opus saved:   ${formatNumber(stats.savedTokens)} tokens`,
+    `Follow-up rate (LOW):   ${(stats.followupRate * 100).toFixed(1)}%    ← lower is better`,
     `Manual overrides:       ${stats.manualOverrides}`,
     divider,
   ];

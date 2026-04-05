@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Dependency checks — exit silently if tools are missing
+# Dependency checks — exit silently if tools are missing.
+# Run `claude-router doctor` for diagnostics if routing isn't working.
 if ! command -v jq >/dev/null 2>&1; then exit 0; fi
 if ! command -v claude-router >/dev/null 2>&1; then exit 0; fi
 
@@ -44,7 +45,7 @@ PROMPT_LEN=${#PROMPT}
 if [ "$PROMPT_LEN" -gt 100000 ] 2>/dev/null; then exit 0; fi
 
 # --- Get the routing directive from the classifier ---
-DIRECTIVE=$(printf '%s' "$PROMPT" | timeout 8 claude-router route --stdin --format directive ${CWD:+--cwd "$CWD"} 2>/dev/null || echo "")
+DIRECTIVE=$(printf '%s' "$PROMPT" | claude-router route --stdin --format directive ${CWD:+--cwd "$CWD"} 2>/dev/null || echo "")
 
 if [ -z "$DIRECTIVE" ]; then
   # No directive — let Claude handle normally

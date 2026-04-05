@@ -29,9 +29,9 @@ describe('classify', () => {
     expect(result.source).toBe('fallback');
   });
 
-  it('returns correct tier for known LOW prompts via signal', async () => {
+  it('returns correct tier for known HIGH prompts via signal (confirmations are context-dependent)', async () => {
     const result = await classify('yes');
-    expect(result.tier).toBe('LOW');
+    expect(result.tier).toBe('HIGH');
     expect(result.source).toBe('signal');
   });
 
@@ -44,7 +44,7 @@ describe('classify', () => {
   it('source is "signal" when quickClassify returns a result', async () => {
     const result = await classify('ok');
     expect(result.source).toBe('signal');
-    expect(result.tier).toBe('LOW');
+    expect(result.tier).toBe('HIGH');
   });
 
   it('tracks latency_ms', async () => {

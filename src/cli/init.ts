@@ -50,6 +50,14 @@ export function handleInit(args: string[]): void {
 
     // 1. Check dependencies
     console.log('Checking dependencies:');
+
+    const major = parseInt(process.versions.node.split('.')[0], 10);
+    if (major < 18) {
+      process.stderr.write(`  ✗ Node.js ${process.versions.node} is too old — requires Node.js 18+\n`);
+      process.exit(1);
+    }
+    console.log(`  ✓ Node.js ${process.versions.node}`);
+
     const hasJq = checkJq();
 
     if (!hasJq) {
@@ -85,7 +93,7 @@ export function handleInit(args: string[]): void {
     }
 
     const alreadyRegistered = settings.hooks.UserPromptSubmit.some(
-      (entry: any) => typeof entry === 'object' && entry.command && entry.command.includes('claude-router')
+      (entry: any) => typeof entry === 'object' && entry.command && entry.command.includes('user-prompt-submit')
     );
 
     if (alreadyRegistered) {
@@ -151,7 +159,7 @@ export function handleRemove(args: string[]): void {
 
       if (settings.hooks && Array.isArray(settings.hooks.UserPromptSubmit)) {
         settings.hooks.UserPromptSubmit = settings.hooks.UserPromptSubmit.filter(
-          (entry: any) => !(typeof entry === 'object' && entry.command && entry.command.includes('claude-router'))
+          (entry: any) => !(typeof entry === 'object' && entry.command && entry.command.includes('user-prompt-submit'))
         );
 
         if (settings.hooks.UserPromptSubmit.length === 0) {

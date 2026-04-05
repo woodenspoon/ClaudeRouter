@@ -2,24 +2,24 @@ import { describe, it, expect } from 'vitest';
 import { quickClassify } from '../src/classifier/signals';
 
 describe('quickClassify', () => {
-  it('"yes" → LOW', () => {
-    expect(quickClassify('yes')).toBe('LOW');
+  it('"yes" → HIGH', () => {
+    expect(quickClassify('yes')).toBe('HIGH');
   });
 
-  it('"ok" → LOW', () => {
-    expect(quickClassify('ok')).toBe('LOW');
+  it('"ok" → HIGH', () => {
+    expect(quickClassify('ok')).toBe('HIGH');
   });
 
-  it('"lgtm" → LOW', () => {
-    expect(quickClassify('lgtm')).toBe('LOW');
+  it('"lgtm" → HIGH', () => {
+    expect(quickClassify('lgtm')).toBe('HIGH');
   });
 
-  it('"go ahead" → LOW', () => {
-    expect(quickClassify('go ahead')).toBe('LOW');
+  it('"go ahead" → HIGH', () => {
+    expect(quickClassify('go ahead')).toBe('HIGH');
   });
 
-  it('"sounds good." → LOW (with period)', () => {
-    expect(quickClassify('sounds good.')).toBe('LOW');
+  it('"sounds good." → HIGH (with period)', () => {
+    expect(quickClassify('sounds good.')).toBe('HIGH');
   });
 
   it('prompt with 3 words containing context reference → null (deferred to Haiku)', () => {
@@ -77,5 +77,21 @@ describe('quickClassify', () => {
 
   it('empty string → LOW', () => {
     expect(quickClassify('')).toBe('LOW');
+  });
+
+  it('"sure" → HIGH (context-dependent confirmation)', () => {
+    expect(quickClassify('sure')).toBe('HIGH');
+  });
+
+  it('"do it" → HIGH (context-dependent confirmation)', () => {
+    expect(quickClassify('do it')).toBe('HIGH');
+  });
+
+  it('Japanese prompt → null (deferred to Haiku for non-Latin scripts)', () => {
+    expect(quickClassify('このコードのバグを修正してください')).toBeNull();
+  });
+
+  it('short numeric response "201" → LOW (under token threshold, no context ref)', () => {
+    expect(quickClassify('201')).toBe('LOW');
   });
 });

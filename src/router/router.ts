@@ -1,5 +1,5 @@
 import { classify } from '../classifier/classifier';
-import { resolveModel } from './model-map';
+import { resolveModel, shiftUp } from './model-map';
 import type { RouterConfig } from './config';
 import type { Tier } from '../classifier/signals';
 
@@ -28,7 +28,7 @@ export async function route(prompt: string, config: RouterConfig): Promise<Routi
 
   // Check for override keyword
   const afterKeyword = trimmed.slice(keyword.length);
-  if (trimmed.toLowerCase().startsWith(keyword) && (afterKeyword === '' || /^\s/.test(afterKeyword))) {
+  if (keyword.length > 0 && trimmed.toLowerCase().startsWith(keyword) && (afterKeyword === '' || /^\s/.test(afterKeyword))) {
     const stripped = afterKeyword.trimStart();
     return {
       model: config.tiers.HIGH,
@@ -44,13 +44,10 @@ export async function route(prompt: string, config: RouterConfig): Promise<Routi
   // Classify the prompt
   const classification = await classify(prompt);
 
-  // Apply conservative shift via model resolution
-  const model = resolveModel(classification.tier, config);
-
-  // Build directive — if conservative shifts the model, the directive
-  // still reflects the original tier's delegation intent but routes
-  // to the shifted model via config
-  const directive = DIRECTIVES[classification.tier];
+  // Determine effective tier for directive (may differ from classification if conservative)
+  const effectiveTier = config.conservative ? shiftUp(classification.tier) : classification.tier;
+  const model = config.tiers[effectiveTier] ?? config.fallback;
+  const directive = DIRECTIVES[effectiveTier];
 
   return {
     model,

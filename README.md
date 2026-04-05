@@ -5,9 +5,6 @@
 
 **Stop burning Opus tokens on grep.** ClaudeRouter classifies every prompt before it hits the model — routing simple tasks to Haiku, feature work to Sonnet, and architecture to Opus. Ships as a Claude Code plugin. Zero config.
 
-## Motivation
-
-93.8% of all tokens in a typical Claude Code Max session flow to Opus — even for trivial tasks like "yes, do it" or "what does this function do?" ([#27665](https://github.com/anthropics/claude-code/issues/27665), [#43326](https://github.com/anthropics/claude-code/issues/43326)). ClaudeRouter fixes this by classifying prompt complexity and delegating to the right model automatically.
 
 ## Prerequisites
 
@@ -46,6 +43,12 @@ claude-router init /path/to/your/project
 ```
 
 ## Verify It's Working
+
+Run the diagnostic check:
+
+```bash
+claude-router doctor
+```
 
 After a few prompts, check your routing stats:
 
@@ -143,6 +146,12 @@ ClaudeRouter works with zero configuration. To customize, create `.claude-router
 
 Config is merged in order: hardcoded defaults → `~/.claude-router.json` → CWD `.claude-router.json`. Later values override earlier ones.
 
+### Team Configuration
+
+To share routing config across a team, commit `.claude-router.json` to your
+repo (you may need to remove it from `.gitignore`). Individual developers can
+still override with `~/.claude-router.json` for personal preferences.
+
 ## Troubleshooting
 
 **Stats show zero events after using Claude Code**
@@ -166,6 +175,10 @@ The hook exits silently without jq. Install it:
 **claude-router command not found after install**
 If installed via `npm install -g .`, ensure your npm global bin directory
 is in your PATH: `npm bin -g`
+
+**I see [ROUTER] lines in my Claude Code transcript**
+This is normal. The routing directive is visible in the transcript as hook
+output, but Claude follows it silently and does not mention it in responses.
 
 **All prompts routing to Sonnet (MEDIUM)**
 This is the fallback behavior when Haiku classification fails. Verify that
@@ -219,7 +232,7 @@ ClaudeRouter uses Claude Code's `UserPromptSubmit` hook to inject routing direct
 
 This approach:
 - **Requires no model mutation** — works within the existing hook API
-- **Is transparent to the user** — no visible routing artifacts
+- **Is minimally visible** — routing directives appear in the transcript but Claude does not mention or acknowledge them to the user
 - **Includes an infinite loop guard** — subagents don't re-trigger the classification hook
 
 ## Uninstallation

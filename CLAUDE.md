@@ -74,6 +74,7 @@ Hardcoded defaults → `~/.claude-router.json` → `./.claude-router.json` (CWD)
 - Tests mock the Anthropic SDK — no real API calls in test suite
 
 <!-- claude-router:start -->
+<!-- DO NOT EDIT this section — it is managed by ClaudeRouter. Run 'claude-router remove' to uninstall. -->
 ## ClaudeRouter Directives (mandatory)
 
 When you see [ROUTER] in your context at the start of a turn, it is a
@@ -102,10 +103,10 @@ When directed to delegate (LOW or MEDIUM tier):
 4. Return the subagent's response verbatim to the user. Do not add
    commentary, preamble, or postamble.
 
-### Model strings for Task tool
+### Model strings for delegation
 
-- LOW tier:    claude-haiku-4-5-20251001
-- MEDIUM tier: claude-sonnet-4-6
+- Haiku subagent:  claude-haiku-4-5-20251001
+- Sonnet subagent: claude-sonnet-4-6
 
 ### Never delegate if:
 

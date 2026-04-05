@@ -7,7 +7,7 @@ export function resolveModel(tier: Tier, config: RouterConfig): string {
   return config.tiers[effectiveTier] ?? config.fallback;
 }
 
-function shiftUp(tier: Tier): Tier {
+export function shiftUp(tier: Tier): Tier {
   switch (tier) {
     case 'LOW':
       return 'MEDIUM';
