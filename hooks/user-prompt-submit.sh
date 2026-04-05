@@ -37,13 +37,14 @@ if [ "$IS_SUBAGENT" = "true" ]; then exit 0; fi
 # --- Extract prompt ---
 PROMPT=$(echo "$INPUT" | jq -r '.prompt // ""' 2>/dev/null || echo "")
 if [ -z "$PROMPT" ]; then exit 0; fi
+CWD=$(echo "$INPUT" | jq -r '.cwd // ""' 2>/dev/null || echo "")
 
 # --- Protect against very long prompts ---
 PROMPT_LEN=${#PROMPT}
 if [ "$PROMPT_LEN" -gt 100000 ] 2>/dev/null; then exit 0; fi
 
 # --- Get the routing directive from the classifier ---
-DIRECTIVE=$(printf '%s' "$PROMPT" | claude-router route --stdin --format directive 2>/dev/null || echo "")
+DIRECTIVE=$(printf '%s' "$PROMPT" | timeout 8 claude-router route --stdin --format directive ${CWD:+--cwd "$CWD"} 2>/dev/null || echo "")
 
 if [ -z "$DIRECTIVE" ]; then
   # No directive — let Claude handle normally

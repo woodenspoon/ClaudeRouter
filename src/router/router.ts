@@ -27,8 +27,9 @@ export async function route(prompt: string, config: RouterConfig): Promise<Routi
   const trimmed = prompt.trimStart();
 
   // Check for override keyword
-  if (trimmed.toLowerCase().startsWith(keyword)) {
-    const stripped = trimmed.slice(keyword.length).trimStart();
+  const afterKeyword = trimmed.slice(keyword.length);
+  if (trimmed.toLowerCase().startsWith(keyword) && (afterKeyword === '' || /^\s/.test(afterKeyword))) {
+    const stripped = afterKeyword.trimStart();
     return {
       model: config.tiers.HIGH,
       tier: 'HIGH',

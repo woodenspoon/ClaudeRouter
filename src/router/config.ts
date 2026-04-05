@@ -52,7 +52,7 @@ function deepMerge(base: RouterConfig, override: Partial<RouterConfig>): RouterC
   return result;
 }
 
-export function loadConfig(): RouterConfig {
+export function loadConfig(cwd?: string): RouterConfig {
   let config: RouterConfig = { ...DEFAULTS, tiers: { ...DEFAULTS.tiers } };
 
   // Layer 1: ~/.claude-router.json
@@ -63,7 +63,7 @@ export function loadConfig(): RouterConfig {
   }
 
   // Layer 2: .claude-router.json in CWD
-  const localPath = path.join(process.cwd(), '.claude-router.json');
+  const localPath = path.join(cwd ?? process.cwd(), '.claude-router.json');
   const localConfig = readJsonFile(localPath);
   if (localConfig) {
     config = deepMerge(config, localConfig);

@@ -22,16 +22,16 @@ describe('quickClassify', () => {
     expect(quickClassify('sounds good.')).toBe('LOW');
   });
 
-  it('prompt with 3 words → LOW (fewer than 8 tokens)', () => {
-    expect(quickClassify('fix the bug')).toBe('LOW');
+  it('prompt with 3 words containing context reference → null (deferred to Haiku)', () => {
+    expect(quickClassify('fix the bug')).toBeNull();
   });
 
-  it('"what does this function do" → LOW (starts with "what does")', () => {
-    expect(quickClassify('what does this function do')).toBe('LOW');
+  it('"what does this function do" → null (context reference: "this", "the function")', () => {
+    expect(quickClassify('what does this function do')).toBeNull();
   });
 
-  it('"show me the error logs" → LOW (starts with "show me")', () => {
-    expect(quickClassify('show me the error logs')).toBe('LOW');
+  it('"show me the error logs" → null (context reference: "the error")', () => {
+    expect(quickClassify('show me the error logs')).toBeNull();
   });
 
   it('"list all files in src" → LOW (starts with "list")', () => {

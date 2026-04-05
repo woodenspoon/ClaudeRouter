@@ -79,7 +79,7 @@ export function readEvents(): RoutingEvent[] {
         const parsed = JSON.parse(line);
         if (parsed.type === 'followup_marker') {
           followups.add(`${parsed.session_id}:${parsed.ts}`);
-        } else {
+        } else if (parsed.ts && typeof parsed.ts === 'string') {
           events.push(parsed as RoutingEvent);
         }
       } catch {

@@ -1,31 +1,47 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 import { markFollowup, readEvents, getSessionId } from './logger';
 
 const FOLLOWUP_WINDOW_MS = 60_000; // 60 seconds
 
-let lastEventTs: string | null = null;
-let lastEventSessionId: string | null = null;
-let lastEventTime: number | null = null;
+const LAST_EVENT_PATH = path.join(os.homedir(), '.claude-router', 'last-event.json');
+
+interface LastEventRecord {
+  session_id: string;
+  ts: string;
+  walltime: number;
+}
+
+function readLastEvent(): LastEventRecord | null {
+  try {
+    const content = fs.readFileSync(LAST_EVENT_PATH, 'utf-8');
+    return JSON.parse(content) as LastEventRecord;
+  } catch {
+    return null;
+  }
+}
+
+function writeLastEvent(record: LastEventRecord): void {
+  try {
+    fs.writeFileSync(LAST_EVENT_PATH, JSON.stringify(record), 'utf-8');
+  } catch {
+    // never throw
+  }
+}
 
 export function recordRoutingEvent(ts: string): void {
-  const sessionId = getSessionId();
-
-  // Check if this is a follow-up to the previous event
-  if (
-    lastEventTs !== null &&
-    lastEventSessionId !== null &&
-    lastEventTime !== null &&
-    lastEventSessionId === sessionId
-  ) {
-    const elapsed = Date.now() - lastEventTime;
-    if (elapsed < FOLLOWUP_WINDOW_MS) {
-      markFollowup(lastEventSessionId, lastEventTs);
+  try {
+    const sessionId = getSessionId();
+    const now = Date.now();
+    const prev = readLastEvent();
+    if (prev && (now - prev.walltime) < FOLLOWUP_WINDOW_MS) {
+      markFollowup(prev.session_id, prev.ts);
     }
+    writeLastEvent({ session_id: sessionId, ts, walltime: now });
+  } catch {
+    // never throw
   }
-
-  // Track this event as the latest
-  lastEventTs = ts;
-  lastEventSessionId = sessionId;
-  lastEventTime = Date.now();
 }
 
 export interface FeedbackStats {

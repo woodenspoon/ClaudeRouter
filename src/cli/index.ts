@@ -27,7 +27,9 @@ async function handleRoute(args: string[]): Promise<void> {
   const formatIdx = args.indexOf('--format');
   const format = formatIdx !== -1 ? args[formatIdx + 1] : 'full';
 
-  const config = loadConfig();
+  const cwdIdx = args.indexOf('--cwd');
+  const cwd = cwdIdx !== -1 ? args[cwdIdx + 1] : undefined;
+  const config = loadConfig(cwd);
   const decision = await route(prompt, config);
 
   // Log telemetry
