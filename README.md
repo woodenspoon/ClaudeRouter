@@ -10,16 +10,37 @@
 
 ```bash
 git clone https://github.com/0dust/ClaudeRouter.git
-cd ClaudeRouter/claude-router
+cd ClaudeRouter
 npm install
 npm run build
 npm install -g .
-
-claude plugins marketplace add "$(npm root -g)/claude-router"
-claude plugins install claude-router
+claude-router init
 ```
 
-That's it. ClaudeRouter is now active for every prompt.
+This will:
+- Verify dependencies (`jq`, `ANTHROPIC_API_KEY`)
+- Register the `UserPromptSubmit` hook in `~/.claude/settings.json`
+- Append the routing directive to your project's `CLAUDE.md` (with markers for clean removal)
+
+You can also target a specific project directory:
+
+```bash
+claude-router init /path/to/your/project
+```
+
+## Verify It's Working
+
+After a few prompts, check your routing stats:
+
+```bash
+claude-router stats
+```
+
+If counts are incrementing, routing is active. You can also check the hook is registered:
+
+```bash
+cat ~/.claude/settings.json | jq '.hooks.UserPromptSubmit'
+```
 
 ## How It Works
 
@@ -39,8 +60,8 @@ ClaudeRouter intercepts every `UserPromptSubmit` hook, classifies the prompt's c
 
 ### Routing Directives
 
-- **LOW** → Claude spawns a Haiku subagent via the Task tool
-- **MEDIUM** → Claude spawns a Sonnet subagent via the Task tool
+- **LOW** → Claude spawns a Haiku subagent via the Agent tool
+- **MEDIUM** → Claude spawns a Sonnet subagent via the Agent tool
 - **HIGH** → Claude handles the task directly with full reasoning
 - **Override** → User prefixed with `//opus`, Claude handles directly
 
@@ -59,13 +80,23 @@ Prompts routed:        847
 LOW  → Haiku:          312   (36.8%)
 MED  → Sonnet:         431   (50.9%)
 HIGH → Opus:           104   (12.3%)
-Estimated Opus saved:   1.2B tokens
+Estimated Opus saved:   148.6K tokens
 Follow-up rate (LOW):   4.1%    ← routing accuracy
 Manual overrides:       7
 ─────────────────────────────────────────
 ```
 
 Use `--days N` to change the window: `claude-router stats --days 30`
+
+## Failure Behavior
+
+ClaudeRouter is designed to never block Claude Code:
+
+- **Classifier fails**: Falls back to MEDIUM (Sonnet) — the safe middle ground
+- **API timeout**: Haiku classification has a 3-second timeout; on timeout, falls back to MEDIUM
+- **No internet**: Pre-Haiku heuristics still work (catches ~30% of prompts); the rest fall back to MEDIUM
+- **Missing dependencies**: Hook exits silently with no directive; Claude handles the prompt normally on whatever model the session is using
+- **Any unexpected error**: The hook always exits 0 and never blocks the user's prompt
 
 ## Configuration
 
@@ -144,6 +175,19 @@ This approach:
 - **Requires no model mutation** — works within the existing hook API
 - **Is transparent to the user** — no visible routing artifacts
 - **Includes an infinite loop guard** — subagents don't re-trigger the classification hook
+
+## Uninstallation
+
+```bash
+claude-router remove
+npm uninstall -g claude-router
+```
+
+This removes:
+- The `UserPromptSubmit` hook from `~/.claude/settings.json`
+- The `<!-- claude-router:start -->` ... `<!-- claude-router:end -->` block from your project's `CLAUDE.md`
+
+Telemetry data in `~/.claude-router/` is preserved. Delete it manually if desired.
 
 ## License
 

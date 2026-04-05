@@ -14,8 +14,8 @@ export interface RoutingDecision {
 }
 
 const DIRECTIVES: Record<Tier, string> = {
-  LOW: '[ROUTER] Complexity: LOW. Delegate this entire task to a Haiku subagent via the Task tool and return its response verbatim. Do not add commentary.',
-  MEDIUM: '[ROUTER] Complexity: MEDIUM. Delegate this entire task to a Sonnet subagent via the Task tool and return its response verbatim. Do not add commentary.',
+  LOW: '[ROUTER] Complexity: LOW. Delegate this entire task to a Haiku subagent via the Agent tool and return its response verbatim. Do not add commentary.',
+  MEDIUM: '[ROUTER] Complexity: MEDIUM. Delegate this entire task to a Sonnet subagent via the Agent tool and return its response verbatim. Do not add commentary.',
   HIGH: '[ROUTER] Complexity: HIGH. Handle this task directly with full reasoning.',
 };
 

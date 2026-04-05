@@ -29,7 +29,7 @@ function getEventsPath(): string {
 function ensureDir(): void {
   const dir = getEventsDir();
   try {
-    fs.mkdirSync(dir, { recursive: true });
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   } catch {
     // ignore
   }
@@ -56,31 +56,9 @@ export function logDecision(event: Omit<RoutingEvent, 'had_followup'>): void {
 
 export function markFollowup(session_id: string, ts: string): void {
   try {
-    const eventsPath = getEventsPath();
-    if (!fs.existsSync(eventsPath)) return;
-
-    const content = fs.readFileSync(eventsPath, 'utf-8');
-    const lines = content.split('\n');
-    let modified = false;
-
-    const updated = lines.map((line) => {
-      if (!line.trim()) return line;
-      try {
-        const event = JSON.parse(line) as RoutingEvent;
-        if (event.session_id === session_id && event.ts === ts && !event.had_followup) {
-          event.had_followup = true;
-          modified = true;
-          return JSON.stringify(event);
-        }
-      } catch {
-        // skip malformed lines
-      }
-      return line;
-    });
-
-    if (modified) {
-      fs.writeFileSync(eventsPath, updated.join('\n'), 'utf-8');
-    }
+    ensureDir();
+    const marker = JSON.stringify({ type: 'followup_marker', session_id, ts }) + '\n';
+    fs.appendFileSync(getEventsPath(), marker, 'utf-8');
   } catch {
     // Never throw
   }
@@ -93,13 +71,26 @@ export function readEvents(): RoutingEvent[] {
 
     const content = fs.readFileSync(eventsPath, 'utf-8');
     const events: RoutingEvent[] = [];
+    const followups = new Set<string>();
 
     for (const line of content.split('\n')) {
       if (!line.trim()) continue;
       try {
-        events.push(JSON.parse(line) as RoutingEvent);
+        const parsed = JSON.parse(line);
+        if (parsed.type === 'followup_marker') {
+          followups.add(`${parsed.session_id}:${parsed.ts}`);
+        } else {
+          events.push(parsed as RoutingEvent);
+        }
       } catch {
         // skip malformed lines
+      }
+    }
+
+    // Reconcile followup markers with events
+    for (const event of events) {
+      if (followups.has(`${event.session_id}:${event.ts}`)) {
+        event.had_followup = true;
       }
     }
 

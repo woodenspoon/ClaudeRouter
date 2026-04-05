@@ -69,5 +69,19 @@ export function loadConfig(): RouterConfig {
     config = deepMerge(config, localConfig);
   }
 
+  warnInvalidModels(config);
+
   return config;
+}
+
+const KNOWN_MODEL_PATTERN = /^claude-(haiku|sonnet|opus)-/;
+
+function warnInvalidModels(config: RouterConfig): void {
+  for (const [tier, model] of Object.entries(config.tiers)) {
+    if (!KNOWN_MODEL_PATTERN.test(model)) {
+      process.stderr.write(
+        `[claude-router] Warning: model "${model}" for tier ${tier} may be invalid\n`
+      );
+    }
+  }
 }

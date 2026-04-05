@@ -14,6 +14,12 @@ export interface ClassificationResult {
 
 const VALID_TIERS: ReadonlySet<string> = new Set(['LOW', 'MEDIUM', 'HIGH']);
 
+let cachedClient: Anthropic | undefined;
+function getClient(): Anthropic {
+  if (!cachedClient) cachedClient = new Anthropic();
+  return cachedClient;
+}
+
 let cachedTemplate: string | undefined;
 
 function loadPromptTemplate(): string {
@@ -71,9 +77,9 @@ export async function classify(prompt: string): Promise<ClassificationResult> {
 
   // Stage 2: Haiku classification
   try {
-    const client = new Anthropic();
+    const client = getClient();
     const template = loadPromptTemplate();
-    const classificationPrompt = template.replace('{{PROMPT}}', prompt);
+    const classificationPrompt = template.replace('{{PROMPT}}', () => prompt);
 
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
@@ -84,6 +90,8 @@ export async function classify(prompt: string): Promise<ClassificationResult> {
           content: classificationPrompt,
         },
       ],
+    }, {
+      timeout: 3000,
     });
 
     const latency = Date.now() - start;

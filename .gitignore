@@ -44,6 +44,9 @@ coverage/
 *.tmp
 *.temp
 .cache/
+*.docx
+*.txt
 
 # Claude Code local config (user-specific overrides)
 .claude-router.json
+.claude/

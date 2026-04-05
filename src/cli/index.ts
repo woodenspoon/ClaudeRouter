@@ -5,6 +5,7 @@ import { loadConfig } from '../router/config';
 import { logDecision, getSessionId, hashPrompt } from '../telemetry/logger';
 import { recordRoutingEvent } from '../telemetry/feedback';
 import { printStats } from './stats';
+import { handleInit, handleRemove } from './init';
 
 async function handleRoute(args: string[]): Promise<void> {
   const prompt = args[0];
@@ -60,6 +61,12 @@ async function main(): Promise<void> {
     case 'stats':
       handleStats(args.slice(1));
       break;
+    case 'init':
+      handleInit(args.slice(1));
+      break;
+    case 'remove':
+      handleRemove(args.slice(1));
+      break;
     case '--help':
     case '-h':
     case undefined:
@@ -68,10 +75,14 @@ async function main(): Promise<void> {
 Usage:
   claude-router route <prompt> [--format model|directive|full]
   claude-router stats [--days N]
+  claude-router init [project-dir]    Set up hook and CLAUDE.md for a project
+  claude-router remove [project-dir]  Remove hook and CLAUDE.md directives
 
 Commands:
   route    Classify a prompt and return the routing decision
-  stats    Show routing statistics for the last N days (default: 7)`);
+  stats    Show routing statistics for the last N days (default: 7)
+  init     Register the UserPromptSubmit hook and inject CLAUDE.md directives
+  remove   Remove the hook and CLAUDE.md directives`);
       break;
     default:
       process.stderr.write(`Unknown command: ${command}\n`);
