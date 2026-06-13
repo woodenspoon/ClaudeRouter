@@ -17,27 +17,29 @@ vi.mock('@anthropic-ai/sdk', () => {
 });
 
 const defaultConfig: RouterConfig = {
+  provider: 'anthropic',
   tiers: {
     LOW: 'claude-haiku-4-5-20251001',
     MEDIUM: 'claude-sonnet-4-6',
-    HIGH: 'claude-opus-4-6',
+    HIGH: 'claude-opus-4-8',
   },
   fallback: 'claude-sonnet-4-6',
   conservative: false,
   override_keyword: '//opus',
+  bedrock_contexts: {},
 };
 
 describe('route', () => {
   it('"//opus explain this architecture" → Opus, source: override', async () => {
     const decision = await route('//opus explain this architecture', defaultConfig);
-    expect(decision.model).toBe('claude-opus-4-6');
+    expect(decision.model).toBe('claude-opus-4-8');
     expect(decision.source).toBe('override');
     expect(decision.stripped_prompt).toBe('explain this architecture');
   });
 
   it('override keyword is case-insensitive', async () => {
     const decision = await route('//OPUS explain this', defaultConfig);
-    expect(decision.model).toBe('claude-opus-4-6');
+    expect(decision.model).toBe('claude-opus-4-8');
     expect(decision.source).toBe('override');
   });
 
@@ -64,7 +66,7 @@ describe('route', () => {
       conservativeConfig
     );
     expect(decision.tier).toBe('MEDIUM');
-    expect(decision.model).toBe('claude-opus-4-6');
+    expect(decision.model).toBe('claude-opus-4-8');
   });
 
   it('config CWD override takes precedence over global', async () => {

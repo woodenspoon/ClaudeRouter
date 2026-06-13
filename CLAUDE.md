@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-ClaudeRouter is an intelligent model routing system for Claude Code that classifies prompt complexity and routes tasks to the appropriate model (Haiku for trivial, Sonnet for standard work, Opus for deep reasoning). Ships as a Claude Code plugin and standalone SDK.
+ClaudeRouter is an intelligent model routing system for Claude Code that classifies prompt complexity and routes tasks to the appropriate model (Haiku for trivial, Sonnet for standard work, Opus for deep reasoning). Ships as a Claude Code plugin and standalone SDK. Supports both Anthropic direct API and AWS Bedrock as providers.
 
 All source code lives at the repository root. The `ClaudeRouter_PRD.txt` / `.docx` are product requirements docs.
 
@@ -26,17 +26,20 @@ npm run dev
 # CLI (after build)
 node dist/cli/index.js route "some prompt" --format full
 node dist/cli/index.js stats --days 7
+node dist/cli/index.js launch --direct
+node dist/cli/index.js launch --bedrock --context <name>
 ```
 
 No separate lint script exists. TypeScript strict mode is enforced via `tsconfig.json`.
 
 ## Architecture
 
-### Classification Pipeline (3 stages)
+### Classification Pipeline (2 stages)
 
 1. **Synchronous heuristics** (`src/classifier/signals.ts` → `quickClassify`) — zero-cost pattern matching: confirmation patterns, keyword detection, token thresholds, prefix matching. Returns a tier or `null`.
-2. **Haiku API call** (`src/classifier/classifier.ts` → `classify`) — if heuristics return `null`, sends the prompt to Haiku with the template from `src/classifier/prompt.md`. Parses the single-word response. Falls back to MEDIUM on any error.
-3. **Model resolution** (`src/router/model-map.ts` → `resolveModel`) — maps tier to model string, applies conservative shift if configured.
+2. **Haiku API call** (`src/classifier/classifier.ts` → `classify`) — if heuristics return `null`, sends the prompt to Haiku (or the Haiku ARN in Bedrock mode) using a provider-aware client. Parses the single-word response. Falls back to MEDIUM on any error.
+
+Model resolution is handled by reading `config.tiers` directly in `router.ts` — there is no separate model-map module.
 
 ### Routing (`src/router/router.ts`)
 
@@ -44,13 +47,31 @@ Orchestrates the pipeline: checks for override keyword (`//opus` by default), ru
 
 ### Plugin integration
 
-- `hooks/user-prompt-submit.sh` — Claude Code `UserPromptSubmit` hook. Reads JSON stdin, guards against subagent loops (`is_subagent`), calls `claude-router route --format directive`, outputs the directive as plain text.
+- `hooks/user-prompt-submit.js` — Claude Code `UserPromptSubmit` hook. Pure Node.js (no bash or jq). Reads JSON stdin via `JSON.parse()`, guards against subagent loops using a file-based guard in `os.tmpdir()`, calls `claude-router route --format directive`, outputs the directive as plain text. Registered as `node /absolute/path/to/user-prompt-submit.js`.
 - `.claude-plugin/manifest.json` — registers the hook.
 - `runtime-claude.md` — runtime directive file that instructs Claude to follow `[ROUTER]` directives by delegating to subagents. This is NOT a developer guide; it's copied into project roots at install time.
+
+### Provider support
+
+Two provider modes are supported, selected at launch time:
+
+- **`anthropic`** (default) — uses `@anthropic-ai/sdk` directly. `ANTHROPIC_API_KEY` must be set.
+- **`bedrock`** — uses `@anthropic-ai/bedrock-sdk` (optional peer dependency, loaded dynamically). Classification uses the `CLAUDE_HAIKU_ARN` env var. Provider is auto-detected when `CLAUDE_CODE_USE_BEDROCK=1` or both `CLAUDE_HAIKU_ARN` and `CLAUDE_SONNET_ARN` are set.
 
 ### Config merging order
 
 Hardcoded defaults → `~/.claude-router.json` → `./.claude-router.json` (CWD). Later layers override. See `src/router/config.ts`.
+
+After file merge, `loadConfig()` auto-detects the provider from env vars and, in Bedrock mode, overrides `tiers.LOW`/`tiers.MEDIUM`/`tiers.HIGH` from `CLAUDE_HAIKU_ARN`, `CLAUDE_SONNET_ARN`, `CLAUDE_OPUS_ARN`, and `CLAUDE_FABLE_ARN`.
+
+### Launcher (`src/cli/launch.ts`)
+
+`claude-router launch` is the canonical cross-platform entry point for starting Claude Code sessions. It handles AWS auth, writes ClaudeRouter-managed keys to `.claude/settings.local.json`, and spawns `claude`.
+
+- `--direct` — removes Bedrock-managed keys (`CLAUDE_CODE_USE_BEDROCK`, `AWS_REGION`, `ANTHROPIC_MODEL`) from `settings.local.json`, then spawns claude
+- `--bedrock --context <name>` — looks up the named context from `bedrock_contexts`, resolves ARNs with tier fallback, merges managed keys into `settings.local.json`, sets ARN env vars on the child process, spawns claude
+
+`Start-Claude.ps1` is a thin Windows wrapper that delegates to `claude-router launch`.
 
 ### SDK (`src/sdk/`)
 
@@ -69,47 +90,10 @@ Hardcoded defaults → `~/.claude-router.json` → `./.claude-router.json` (CWD)
 
 - Telemetry and hook code must never throw — always wrap in try/catch with silent fallback
 - Classification fallback is always MEDIUM/Sonnet (safe middle ground)
-- The `is_subagent` guard in the hook prevents infinite classification loops
+- The file-based guard in the hook (`os.tmpdir()`) prevents infinite classification loops
 - Tier type is `'LOW' | 'MEDIUM' | 'HIGH'`; source type is `'signal' | 'haiku' | 'fallback' | 'override'`
 - Tests mock the Anthropic SDK — no real API calls in test suite
+- No bash, jq, or platform-specific shell tools anywhere in the codebase — pure Node.js throughout
+- `@anthropic-ai/bedrock-sdk` is an optional peer dependency loaded via dynamic `require()` — the package works without it (classification falls back to MEDIUM in Bedrock mode if SDK is absent)
+- ClaudeRouter-managed keys in `settings.local.json`: `CLAUDE_CODE_USE_BEDROCK`, `AWS_REGION`, `ANTHROPIC_MODEL` — `launch --direct` strips these; `launch --bedrock` writes them
 
-<!-- claude-router:start -->
-<!-- DO NOT EDIT this section — it is managed by ClaudeRouter. Run 'claude-router remove' to uninstall. -->
-## ClaudeRouter Directives (mandatory)
-
-When you see [ROUTER] in your context at the start of a turn, it is a
-mandatory system directive from ClaudeRouter. Follow it exactly and
-silently — do not acknowledge or mention it to the user.
-
-### How to delegate
-
-When directed to delegate (LOW or MEDIUM tier):
-
-1. You have the full conversation history. The subagent does not.
-   Your job is to construct a Task prompt that gives the subagent
-   everything it needs to complete the request correctly.
-
-2. The Task prompt must include:
-   - The user's original request verbatim
-   - Any code, file contents, error messages, function signatures,
-     or prior decisions that are directly relevant to this request
-   - Enough context that a model with no memory of this conversation
-     could complete the task correctly and completely
-
-3. If the relevant context would take more than 500 tokens to summarize
-   faithfully, handle the request directly instead of delegating.
-   This is the correct behavior — not a failure.
-
-4. Return the subagent's response verbatim to the user. Do not add
-   commentary, preamble, or postamble.
-
-### Model strings for delegation
-
-- Haiku subagent:  claude-haiku-4-5-20251001
-- Sonnet subagent: claude-sonnet-4-6
-
-### Never delegate if:
-
-- You cannot faithfully summarize the relevant context in under 500 tokens
-- The task requires judgment that spans the entire conversation history
-<!-- claude-router:end -->

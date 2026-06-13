@@ -1,7 +1,12 @@
 import { classify } from '../classifier/classifier';
-import { resolveModel, shiftUp } from './model-map';
 import type { RouterConfig } from './config';
 import type { Tier } from '../classifier/signals';
+
+function shiftUp(tier: Tier): Tier {
+  if (tier === 'LOW') return 'MEDIUM';
+  if (tier === 'MEDIUM') return 'HIGH';
+  return 'HIGH';
+}
 
 export interface RoutingDecision {
   model: string;

@@ -7,6 +7,7 @@ import { recordRoutingEvent } from '../telemetry/feedback';
 import { printStats } from './stats';
 import { handleInit, handleRemove } from './init';
 import { handleDoctor } from './doctor';
+import { handleLaunch } from './launch';
 
 async function handleRoute(args: string[]): Promise<void> {
   let prompt: string;
@@ -82,6 +83,9 @@ async function main(): Promise<void> {
     case 'doctor':
       handleDoctor();
       break;
+    case 'launch':
+      handleLaunch(args.slice(1));
+      break;
     case '--version':
     case '-v': {
       const pkg = require('../../package.json');
@@ -96,16 +100,26 @@ async function main(): Promise<void> {
 Usage:
   claude-router route <prompt> [--stdin] [--format model|directive|full]
   claude-router stats [--days N]
-  claude-router init [project-dir]    Set up hook and CLAUDE.md for a project
-  claude-router remove [project-dir]  Remove hook and CLAUDE.md directives
-  claude-router doctor                Verify installation health
+  claude-router init [project-dir]                   Set up hook and CLAUDE.md
+  claude-router remove [project-dir]                 Remove hook and CLAUDE.md
+  claude-router doctor                               Verify installation health
+  claude-router launch --direct [-- <claude-args>]
+  claude-router launch --bedrock --context <name> [-- <claude-args>]
 
 Commands:
   route    Classify a prompt and return the routing decision
   stats    Show routing statistics for the last N days (default: 7)
   init     Register the UserPromptSubmit hook and inject CLAUDE.md directives
   remove   Remove the hook and CLAUDE.md directives
-  doctor   Check Node version, jq, hook registration, and file accessibility`);
+  doctor   Check Node version, hook registration, and file accessibility
+  launch   Start Claude in direct (Anthropic) or Bedrock mode
+
+Launch flags:
+  --direct              Use Anthropic API directly; removes Bedrock settings
+  --bedrock             Use AWS Bedrock (requires --context)
+  --context <name>      Bedrock context from ~/.claude-router.json
+  --bypass-permissions  Pass --permission-mode bypassPermissions to claude
+  --                    Pass remaining args directly to claude`);
       break;
     default:
       process.stderr.write(`Unknown command: ${command}\n`);

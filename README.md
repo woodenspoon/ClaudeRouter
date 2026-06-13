@@ -11,7 +11,6 @@
 - **Node.js 18+**
 - **Claude Code** installed ([install guide](https://docs.anthropic.com/en/docs/claude-code))
 - **Claude Pro or Max subscription** (required for subagent delegation)
-- **jq** — the hook script depends on it (`brew install jq` / `apt install jq`)
 
 ## Installation
 
@@ -32,7 +31,6 @@ claude-router init
 ```
 
 This will:
-- Verify dependencies (`jq`)
 - Register the `UserPromptSubmit` hook in `~/.claude/settings.json`
 - Append the routing directive to your project's `CLAUDE.md` (with markers for clean removal)
 
@@ -56,11 +54,7 @@ After a few prompts, check your routing stats:
 claude-router stats
 ```
 
-If counts are incrementing, routing is active. You can also check the hook is registered:
-
-```bash
-cat ~/.claude/settings.json | jq '.hooks.UserPromptSubmit'
-```
+If counts are incrementing, routing is active.
 
 ## How It Works
 
@@ -127,7 +121,7 @@ ClaudeRouter works with zero configuration. To customize, create `.claude-router
   "tiers": {
     "LOW": "claude-haiku-4-5-20251001",
     "MEDIUM": "claude-sonnet-4-6",
-    "HIGH": "claude-opus-4-6"
+    "HIGH": "claude-opus-4-8"
   },
   "fallback": "claude-sonnet-4-6",
   "conservative": false,
@@ -139,7 +133,7 @@ ClaudeRouter works with zero configuration. To customize, create `.claude-router
 |-------|---------|-------------|
 | `tiers.LOW` | `claude-haiku-4-5-20251001` | Model for trivial tasks |
 | `tiers.MEDIUM` | `claude-sonnet-4-6` | Model for standard engineering work |
-| `tiers.HIGH` | `claude-opus-4-6` | Model for deep reasoning tasks |
+| `tiers.HIGH` | `claude-opus-4-8` | Model for deep reasoning tasks (Fable can be assigned here) |
 | `fallback` | `claude-sonnet-4-6` | Model used when classification fails |
 | `conservative` | `false` | Shift all routes one tier up (LOW→Sonnet, MEDIUM→Opus) |
 | `override_keyword` | `//opus` | Prefix to force Opus on any turn |
@@ -152,25 +146,57 @@ To share routing config across a team, commit `.claude-router.json` to your
 repo (you may need to remove it from `.gitignore`). Individual developers can
 still override with `~/.claude-router.json` for personal preferences.
 
+### AWS Bedrock
+
+ClaudeRouter supports AWS Bedrock as a provider. Add `bedrock_contexts` to `~/.claude-router.json`:
+
+```json
+{
+  "bedrock_contexts": {
+    "team-a": {
+      "region": "us-east-1",
+      "haiku_arn": "arn:aws:bedrock:us-east-1:ACCOUNT:application-inference-profile/xxx",
+      "sonnet_arn": "arn:aws:bedrock:us-east-1:ACCOUNT:application-inference-profile/yyy"
+    }
+  }
+}
+```
+
+`haiku_arn` is required; `sonnet_arn`, `opus_arn`, and `fable_arn` are optional — missing tiers fall back gracefully with a warning. Then launch with:
+
+```bash
+claude-router launch --bedrock --context team-a
+```
+
+## Starting Claude Code
+
+`claude-router launch` is the canonical cross-platform entry point. It manages AWS auth and writes the required env vars to `.claude/settings.local.json` before spawning Claude Code.
+
+```bash
+# Anthropic direct API
+claude-router launch --direct
+
+# AWS Bedrock
+claude-router launch --bedrock --context <name>
+
+# Pass extra args to claude
+claude-router launch --bedrock --context team-a -- --flag value
+
+# Bypass permission prompts
+claude-router launch --bedrock --context team-a --bypass-permissions
+```
+
+On Windows, `Start-Claude.ps1` is a thin wrapper around `claude-router launch` for users who prefer the PowerShell interface.
+
 ## Troubleshooting
 
 **Stats show zero events after using Claude Code**
-The hook may not be registered. Check:
-```bash
-cat ~/.claude/settings.json | jq '.hooks.UserPromptSubmit'
-```
-If empty, re-run `claude-router init`.
+The hook may not be registered. Run `claude-router doctor` to check. If the hook is missing, re-run `claude-router init`.
 
 **Hook not firing**
-1. Verify `jq` is installed: `command -v jq`
-2. Verify the hook script exists at the path shown in settings.json
-3. Verify the hook is executable: `ls -la $(which claude-router)`
-
-**jq not installed**
-The hook exits silently without jq. Install it:
-- macOS: `brew install jq`
-- Ubuntu/Debian: `sudo apt install jq`
-- Arch: `sudo pacman -S jq`
+1. Verify the hook script exists at the path shown in `~/.claude/settings.json`
+2. Verify Node.js 18+ is in PATH: `node --version`
+3. Run `claude-router doctor` for a full health check
 
 **claude-router command not found after install**
 If installed via `npm install -g .`, ensure your npm global bin directory

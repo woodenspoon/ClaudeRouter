@@ -57,7 +57,7 @@ describe('config loading e2e', () => {
 
     it('HIGH tier defaults to opus model', () => {
       const config = loadConfig(projectDir);
-      expect(config.tiers.HIGH).toBe('claude-opus-4-6');
+      expect(config.tiers.HIGH).toBe('claude-opus-4-8');
     });
 
     it('fallback defaults to sonnet', () => {
@@ -82,7 +82,7 @@ describe('config loading e2e', () => {
       const config = loadConfig(projectDir);
       expect(config.tiers.LOW).toBe('claude-haiku-custom');
       expect(config.tiers.MEDIUM).toBe('claude-sonnet-4-6');
-      expect(config.tiers.HIGH).toBe('claude-opus-4-6');
+      expect(config.tiers.HIGH).toBe('claude-opus-4-8');
     });
 
     it('sets conservative: true → reflects in loaded config', () => {
@@ -104,7 +104,7 @@ describe('config loading e2e', () => {
       const config = loadConfig(projectDir);
       expect(config.tiers.MEDIUM).toBe('claude-sonnet-custom');
       expect(config.tiers.LOW).toBe('claude-haiku-4-5-20251001');
-      expect(config.tiers.HIGH).toBe('claude-opus-4-6');
+      expect(config.tiers.HIGH).toBe('claude-opus-4-8');
     });
   });
 
@@ -172,7 +172,7 @@ describe('config loading e2e', () => {
       const config = loadConfig(projectDir);
       expect(config.tiers.LOW).toBe('global-haiku');
       expect(config.tiers.MEDIUM).toBe('project-sonnet');
-      expect(config.tiers.HIGH).toBe('claude-opus-4-6');
+      expect(config.tiers.HIGH).toBe('claude-opus-4-8');
     });
   });
 
