@@ -57,6 +57,16 @@ async function handleRoute(args: string[]): Promise<void> {
   }
 }
 
+function handleListContexts(): void {
+  const config = loadConfig();
+  const names = Object.keys(config.bedrock_contexts).sort();
+  if (names.length === 0) {
+    process.stdout.write('No Bedrock contexts configured in ~/.claude-router.json\n');
+  } else {
+    process.stdout.write(names.join('\n') + '\n');
+  }
+}
+
 function handleStats(args: string[]): void {
   const daysIdx = args.indexOf('--days');
   const days = daysIdx !== -1 ? parseInt(args[daysIdx + 1], 10) : 7;
@@ -86,6 +96,9 @@ async function main(): Promise<void> {
     case 'launch':
       handleLaunch(args.slice(1));
       break;
+    case 'list-contexts':
+      handleListContexts();
+      break;
     case '--version':
     case '-v': {
       const pkg = require('../../package.json');
@@ -103,16 +116,18 @@ Usage:
   claude-router init [project-dir]                   Set up hook and CLAUDE.md
   claude-router remove [project-dir]                 Remove hook and CLAUDE.md
   claude-router doctor                               Verify installation health
+  claude-router list-contexts                        List available Bedrock contexts
   claude-router launch --direct [-- <claude-args>]
   claude-router launch --bedrock --context <name> [-- <claude-args>]
 
 Commands:
-  route    Classify a prompt and return the routing decision
-  stats    Show routing statistics for the last N days (default: 7)
-  init     Register the UserPromptSubmit hook and inject CLAUDE.md directives
-  remove   Remove the hook and CLAUDE.md directives
-  doctor   Check Node version, hook registration, and file accessibility
-  launch   Start Claude in direct (Anthropic) or Bedrock mode
+  route          Classify a prompt and return the routing decision
+  stats          Show routing statistics for the last N days (default: 7)
+  init           Register the UserPromptSubmit hook and inject CLAUDE.md directives
+  remove         Remove the hook and CLAUDE.md directives
+  doctor         Check Node version, hook registration, and file accessibility
+  list-contexts  List Bedrock context names from ~/.claude-router.json
+  launch         Start Claude in direct (Anthropic) or Bedrock mode
 
 Launch flags:
   --direct              Use Anthropic API directly; removes Bedrock settings

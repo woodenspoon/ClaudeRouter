@@ -26,6 +26,7 @@ npm run dev
 # CLI (after build)
 node dist/cli/index.js route "some prompt" --format full
 node dist/cli/index.js stats --days 7
+node dist/cli/index.js list-contexts
 node dist/cli/index.js launch --direct
 node dist/cli/index.js launch --bedrock --context <name>
 ```
