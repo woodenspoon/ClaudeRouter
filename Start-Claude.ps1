@@ -34,6 +34,11 @@
 [CmdletBinding(DefaultParameterSetName = 'Bedrock')]
 param(
     [Parameter(Mandatory = $true, ParameterSetName = 'Bedrock')]
+    [ArgumentCompleter({
+        (claude-router list-contexts 2>$null) -split "`n" |
+            Where-Object { $_ } |
+            ForEach-Object { [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_) }
+    })]
     [string]$Context,
 
     [Parameter(Mandatory = $true, ParameterSetName = 'Direct')]
