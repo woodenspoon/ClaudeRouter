@@ -18,6 +18,7 @@
     "hooks/",
     ".claude-plugin/",
     "runtime-claude.md",
+    "Start-Claude.ps1",
     "README.md",
     "LICENSE"
   ],

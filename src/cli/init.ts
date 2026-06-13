@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { execSync } from 'child_process';
 
 
 function getSettingsPath(): string {
@@ -30,6 +31,56 @@ function getHookPath(): string {
 
 function getRuntimeClaudeMdPath(): string {
   return path.resolve(__dirname, '..', '..', 'runtime-claude.md');
+}
+
+function getStartClaudePsSource(): string {
+  return path.resolve(__dirname, '..', '..', 'Start-Claude.ps1');
+}
+
+function getNpmGlobalPrefix(): string | null {
+  try {
+    return execSync('npm prefix -g', { encoding: 'utf-8' }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function installStartClaudePs(): void {
+  if (process.platform !== 'win32') return;
+
+  const src = getStartClaudePsSource();
+  if (!fs.existsSync(src)) {
+    console.log('  (Start-Claude.ps1 not found in package — skipping)');
+    return;
+  }
+
+  const prefix = getNpmGlobalPrefix();
+  if (!prefix) {
+    console.log('  (could not determine npm global prefix — skipping Start-Claude.ps1 install)');
+    return;
+  }
+
+  const dest = path.join(prefix, 'Start-Claude.ps1');
+  fs.copyFileSync(src, dest);
+  console.log(`Installed Start-Claude.ps1 to ${dest}`);
+}
+
+function uninstallStartClaudePs(): void {
+  if (process.platform !== 'win32') return;
+
+  const prefix = getNpmGlobalPrefix();
+  if (!prefix) {
+    console.log('  (could not determine npm global prefix — skipping Start-Claude.ps1 removal)');
+    return;
+  }
+
+  const dest = path.join(prefix, 'Start-Claude.ps1');
+  if (fs.existsSync(dest)) {
+    fs.unlinkSync(dest);
+    console.log(`Removed Start-Claude.ps1 from ${dest}`);
+  } else {
+    console.log('Start-Claude.ps1 not found in npm global prefix — nothing to remove');
+  }
 }
 
 export function handleInit(args: string[]): void {
@@ -121,6 +172,9 @@ export function handleInit(args: string[]): void {
       console.log(`Created ${targetClaudeMd} with router directives`);
     }
 
+    // 4. Install Start-Claude.ps1 (Windows only)
+    installStartClaudePs();
+
     console.log('\nDone! ClaudeRouter is ready.');
   } catch (err: any) {
     process.stderr.write(`Error during init: ${err.message}\n`);
@@ -173,9 +227,9 @@ export function handleRemove(args: string[]): void {
       let content = fs.readFileSync(targetClaudeMd, 'utf-8');
 
       if (content.includes('<!-- claude-router:start -->')) {
-        // Remove the block and any trailing blank line
+        // Remove the block, including any blank lines immediately before it
         content = content.replace(
-          /<!-- claude-router:start -->[\s\S]*?<!-- claude-router:end -->\n?/,
+          /\n*<!-- claude-router:start -->[\s\S]*?<!-- claude-router:end -->\n?/,
           ''
         );
 
@@ -192,6 +246,9 @@ export function handleRemove(args: string[]): void {
     } else {
       console.log(`No CLAUDE.md found at ${targetDir}`);
     }
+
+    // 3. Remove Start-Claude.ps1 (Windows only)
+    uninstallStartClaudePs();
 
     console.log('\nDone! ClaudeRouter has been removed.');
   } catch (err: any) {
