@@ -28,10 +28,15 @@ When directed to delegate (LOW or MEDIUM tier):
 4. Return the subagent's response verbatim to the user. Do not add
    commentary, preamble, or postamble.
 
-### Model strings for delegation
+### How to invoke the Agent tool for delegation
 
-- Haiku subagent:  claude-haiku-4-5-20251001
-- Sonnet subagent: claude-sonnet-4-6
+The Agent tool's `subagent_type` parameter does NOT accept model IDs. Use
+`subagent_type: "claude"` and set the `model` parameter separately. The
+`model` parameter accepts only these short aliases: `"haiku"`, `"sonnet"`,
+`"opus"`, `"fable"`.
+
+- Haiku subagent:  `subagent_type: "claude"`, `model: "haiku"`
+- Sonnet subagent: `subagent_type: "claude"`, `model: "sonnet"`
 
 ### Never delegate if:
 

@@ -4,7 +4,7 @@ import { spawnSync } from 'child_process';
 import { loadConfig } from '../router/config';
 import type { BedrockContext } from '../router/config';
 
-const MANAGED_ENV_KEYS = ['CLAUDE_CODE_USE_BEDROCK', 'AWS_REGION', 'ANTHROPIC_MODEL'];
+const MANAGED_ENV_KEYS = ['CLAUDE_CODE_USE_BEDROCK', 'AWS_REGION', 'ANTHROPIC_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'CLAUDE_HAIKU_ARN', 'CLAUDE_SONNET_ARN', 'CLAUDE_OPUS_ARN', 'CLAUDE_FABLE_ARN'];
 
 function setTerminalTitle(title: string): void {
   if (process.stdout.isTTY) {
@@ -185,11 +185,21 @@ export function handleLaunch(args: string[]): void {
   settings.env.CLAUDE_CODE_USE_BEDROCK = '1';
   settings.env.AWS_REGION = region;
   settings.env.ANTHROPIC_MODEL = haiku;
+  settings.env.ANTHROPIC_DEFAULT_HAIKU_MODEL = haiku;
+  settings.env.ANTHROPIC_DEFAULT_SONNET_MODEL = sonnet;
+  settings.env.ANTHROPIC_DEFAULT_OPUS_MODEL = high;
+  settings.env.CLAUDE_HAIKU_ARN = haiku;
+  settings.env.CLAUDE_SONNET_ARN = sonnet;
+  settings.env.CLAUDE_OPUS_ARN = high;
+  if (ctx.fable_arn) settings.env.CLAUDE_FABLE_ARN = ctx.fable_arn;
   writeSettingsLocal(settings);
 
   // Build env for the claude child process
   const extraEnv: Record<string, string> = {
     CLAUDE_CONTEXT: contextName,
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: haiku,
+    ANTHROPIC_DEFAULT_SONNET_MODEL: sonnet,
+    ANTHROPIC_DEFAULT_OPUS_MODEL: high,
     CLAUDE_HAIKU_ARN: haiku,
     CLAUDE_SONNET_ARN: sonnet,
   };
